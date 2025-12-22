@@ -10,7 +10,7 @@ from socketserver import ThreadingMixIn
 from typing import Any, Dict, Tuple, Optional
 
 from .task_manager import TaskManager
-from ..tools.execute_api_script import handler as execute_script_handler
+from tools.execute_api_script import handler as execute_script_handler
 
 try:
     import adsk.core

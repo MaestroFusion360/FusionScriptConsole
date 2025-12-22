@@ -1,8 +1,8 @@
 import adsk.core
 import os
-from ...lib import fusionAddInUtils as futil
-from ... import config
-from ...server.server_manager import stop_server, is_server_running
+from lib import fusionAddInUtils as futil
+import config
+from server.server_manager import stop_server, is_server_running
 
 app = adsk.core.Application.get()
 ui = app.userInterface
