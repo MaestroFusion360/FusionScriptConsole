@@ -1,9 +1,4 @@
-﻿"""
-Task Manager Module
-
-This module provides a TaskManager class for handling custom events and task execution
-within the Fusion 360 environment.
-"""
+"""Custom event task manager for Fusion 360."""
 
 import json
 import uuid
@@ -17,13 +12,7 @@ except ImportError:
 
 
 class TaskManager:
-    """
-    TaskManager class for handling custom events and task execution.
-
-    Provides a mechanism to post tasks with callbacks that will be executed
-    when custom events are fired in the Fusion 360 environment.
-    Acts as a singleton with class methods for global access.
-    """
+    """Singleton for posting tasks via custom events."""
 
     _instance = None
     _event_handler = None
@@ -32,13 +21,13 @@ class TaskManager:
     _is_running = False
 
     def __new__(cls):
-        """Ensure only one instance exists (singleton pattern)."""
+        """Ensure only one instance exists."""
         if cls._instance is None:
             cls._instance = super(TaskManager, cls).__new__(cls)
         return cls._instance
 
     def __init__(self):
-        """Initialize the TaskManager (only called once due to singleton)."""
+        """Initialize the TaskManager."""
         if not hasattr(self, '_initialized'):
             self._event_handler = None
             self._custom_event = None
@@ -48,12 +37,7 @@ class TaskManager:
 
     @classmethod
     def start(cls) -> bool:
-        """
-        Start the TaskManager by registering a custom event and handler.
-
-        Returns:
-            True if started successfully, False otherwise
-        """
+        """Register the custom event and handler."""
         if not app:
             return False
 
@@ -73,12 +57,7 @@ class TaskManager:
 
     @classmethod
     def stop(cls) -> bool:
-        """
-        Stop the TaskManager by removing the event handler.
-
-        Returns:
-            True if stopped successfully, False otherwise
-        """
+        """Remove the custom event handler."""
         if not cls._is_running:
             return True
 
@@ -97,17 +76,7 @@ class TaskManager:
 
     @classmethod
     def post(cls, command: str, callback: Callable[[Dict[str, Any]], None], data: Dict[str, Any]) -> Optional[str]:
-        """
-        Post a task with a callback to be executed when the custom event is fired.
-
-        Args:
-            command: Command string to identify the task type
-            callback: Callable function to execute with the data
-            data: Dictionary containing task data
-
-        Returns:
-            Task ID if posted successfully, None otherwise
-        """
+        """Post a task and return its id."""
         if not cls._is_running:
             return None
 
@@ -136,28 +105,24 @@ class TaskManager:
 
     @classmethod
     def is_running(cls) -> bool:
-        """Check if the TaskManager is currently running."""
+        """Return True when the event handler is active."""
         return cls._is_running
 
     @classmethod
     def get_pending_task_count(cls) -> int:
-        """Get the number of pending tasks."""
+        """Return the pending task count."""
         return len(cls._pending_tasks)
 
 
 class TaskEventHandler(adsk.core.CustomEventHandler):
-    """
-    Event handler for TaskManager custom events.
-
-    Handles the execution of callbacks when custom events are received.
-    """
+    """Custom event handler for TaskManager tasks."""
 
     def __init__(self, pending_tasks: Dict[str, Dict[str, Any]]):
         super().__init__()
         self._pending_tasks = pending_tasks
 
     def notify(self, args: adsk.core.CustomEventArgs):
-        """Handle the custom event notification."""
+        """Dispatch the task callback."""
         try:
             event_data = json.loads(args.additionalInfo)
             task_id = event_data.get('task_id')
@@ -183,10 +148,10 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
 
 
 def start_task_manager() -> bool:
-    """Start the TaskManager singleton."""
+    """Start the TaskManager."""
     return TaskManager.start()
 
 
 def stop_task_manager() -> bool:
-    """Stop the TaskManager singleton."""
+    """Stop the TaskManager."""
     return TaskManager.stop()

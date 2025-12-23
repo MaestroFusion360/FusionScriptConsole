@@ -8,6 +8,7 @@ Fusion 360 add-in with an MCP server and a Svelte interface for running Python s
 - API access is protected by a token (API key)
 
 ---
+
 <!-- markdownlint-disable MD033 -->
 <details>
   <summary><h2>Table of Contents</h2></summary>
@@ -40,13 +41,15 @@ The project combines a Python add-in for Fusion 360 with a Svelte 5 frontend. Th
 ## Token (API key)
 
 The server listens only on `127.0.0.1` and requires an API key for `/mcp` and `/health`.
+<!-- markdownlint-disable MD029 -->
+1. Set the key in `.env`:
 
-1) Set the key in `.env`:
-```
+```txt
 FUSION_MCP_API_KEY=YOUR_KEY
 ```
-2) Restart Fusion 360 (or the add-in).
-3) Enter the same key in the UI field **API Key**.
+
+2. Restart Fusion 360 (or the add-in).
+3. Enter the same key in the UI field **API Key**.
 
 Without a matching key the server returns `401 Unauthorized`.
 

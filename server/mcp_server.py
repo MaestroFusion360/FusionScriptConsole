@@ -1,6 +1,4 @@
-﻿"""
-Minimal HTTP server for Fusion that accepts POST /mcp with Python code.
-"""
+"""Minimal HTTP server with /mcp and /health endpoints."""
 
 import hmac
 import json
@@ -28,7 +26,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class MCPHandler(BaseHTTPRequestHandler):
-    """HTTP request handler for minimal /mcp endpoint."""
+    """HTTP handler for MCP endpoints."""
 
     def _is_authorized(self) -> bool:
         api_key = config.get_api_key() or ""
@@ -149,7 +147,7 @@ def start_mcp_server(
     host: str = 'localhost',
     port: int = 9100
 ) -> Tuple[Optional[ThreadedHTTPServer], Optional[threading.Thread]]:
-    """Start minimal HTTP server with /mcp endpoint."""
+    """Start the MCP HTTP server."""
     try:
         server_address = (host, port)
 
@@ -169,7 +167,7 @@ def start_mcp_server(
 
 
 def stop_mcp_server(http_server, server_thread, timeout=5):
-    """Stop the MCP server."""
+    """Stop the MCP HTTP server."""
     try:
         if http_server:
             http_server.shutdown()
@@ -185,5 +183,3 @@ def stop_mcp_server(http_server, server_thread, timeout=5):
         if app:
             app.log(f"Error stopping MCP server: {str(exc)}")
         return False
-
-

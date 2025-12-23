@@ -1,3 +1,5 @@
+"""UI command to send data to the palette."""
+
 import json
 import adsk.core
 import os
@@ -14,12 +16,15 @@ IS_PROMOTED = False
 
 PALETTE_ID = config.sample_palette_id
 
+# UI placement
 WORKSPACE_ID = 'FusionSolidEnvironment'
 PANEL_ID = 'SolidScriptsAddinsPanel'
 COMMAND_BESIDE_ID = 'ScriptsManagerCommand'
 
+# Icons
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
 
+# Event handlers
 local_handlers = []
 
 

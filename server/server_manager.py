@@ -1,3 +1,5 @@
+"""MCP server lifecycle helpers."""
+
 from typing import Tuple
 
 from .mcp_server import start_mcp_server, stop_mcp_server

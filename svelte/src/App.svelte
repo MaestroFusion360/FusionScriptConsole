@@ -1,4 +1,5 @@
-﻿<script lang="ts">
+<script lang="ts">
+  // Fusion Script Console UI: editor, server status, script storage.
   import {
     Button,
     Card,
@@ -94,6 +95,7 @@ def run(context):
     authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
   };
 
+  // Wrap raw code into run(context) when needed.
   function wrapCode(source: string): string {
     const lines = source.split("\n");
     return ["def run(context):", ...lines.map((line) => `    ${line}`)].join(
@@ -101,6 +103,7 @@ def run(context):
     );
   }
 
+  // Convert MCP endpoint to /health URL.
   function getHealthUrl(url: string): string | null {
     try {
       const parsed = new URL(url);
@@ -113,6 +116,7 @@ def run(context):
     }
   }
 
+  // Poll server health status.
   async function checkServerHealth(healthUrl: string) {
     try {
       const controller = new AbortController();
@@ -138,6 +142,7 @@ def run(context):
     }
   }
 
+  // Execute script via MCP.
   async function runScript() {
     status = "running";
     lastError = "";
@@ -206,6 +211,7 @@ def run(context):
     status = "idle";
   }
 
+  // Save current script into local storage.
   function saveScript() {
     const name = dialogName.trim();
     if (!name) {
@@ -226,6 +232,7 @@ def run(context):
     active = name;
   }
 
+  // Remove current script from storage and editor.
   function deleteScript() {
     if (currentScriptName) {
       scripts = scripts.filter((script) => script.name !== currentScriptName);
@@ -235,6 +242,7 @@ def run(context):
     code = "";
   }
 
+  // Export all scripts into a single text file.
   function exportAllScripts() {
     if (!scripts.length) return;
     const parts = scripts.map((script) => `### ${script.name}\n${script.code}`);
@@ -275,6 +283,7 @@ def run(context):
     dialogError = "";
   }
 
+  // Load a saved script from the menu.
   function handleMenuSelect(id: string) {
     active = id;
     const selected = scripts.find((script) => script.name === id);

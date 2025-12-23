@@ -1,3 +1,5 @@
+"""UI command to stop the MCP server."""
+
 import adsk.core
 import os
 from lib import fusionAddInUtils as futil
@@ -12,6 +14,7 @@ CMD_NAME = 'Stop Fusion Script Console'
 CMD_Description = 'Stop Fusion MCP server'
 IS_PROMOTED = False
 
+# UI placement
 WORKSPACE_ID = 'FusionSolidEnvironment'
 PANEL_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_panel'
 PANEL_NAME = 'Fusion Script Console'
@@ -19,8 +22,10 @@ TAB_ID = 'SolidTab'
 FALLBACK_PANEL_ID = 'SolidScriptsAddinsPanel'
 COMMAND_BESIDE_ID = 'ScriptsManagerCommand'
 
+# Icons
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
 
+# Event handlers
 local_handlers = []
 
 
