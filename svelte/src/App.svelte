@@ -4,13 +4,14 @@
     Card,
     CheckBox,
     CodeView,
-    Dialog,
+    Dialog, 
     Field,
     Hamburger,
     ThemeToggle,
+    Tooltip,
     TEXT,
   } from "svelte-comp";
-  import { Download, FileDown, Play, Trash2, Terminal } from "lucide-svelte";
+  import { Download, FileDown, Play, Trash2, Terminal, X } from "lucide-svelte";
 
   type Status = "idle" | "running" | "ok" | "error";
   type DialogAction = "save" | "delete" | null;
@@ -29,7 +30,8 @@ def run(context):
     return app.activeDocument.name
 `;
 
-  let serverUrl = $state("http://localhost:9100/mcp");
+  let serverUrl = $state("http://127.0.0.1:9100/mcp");
+  let apiKey = $state("");
   let wrapInRun = $state(true);
   let code = $state(defaultCode);
   let output = $state("");
@@ -39,6 +41,7 @@ def run(context):
   let serverLastError = $state("");
   const scriptsStorageKey = "fusion-script-console.scripts";
   const legacyStorageKey = "fusion-script-console.code";
+  const apiKeyStorageKey = "fusion-script-console.apiKey";
 
   const isRunning = $derived(status === "running");
   const statusLabel = $derived.by(() => {
@@ -64,6 +67,7 @@ def run(context):
   let dialogName = $state("");
   let dialogError = $state("");
   let storageReady = $state(false);
+  let authReady = $state(false);
   const menu = $derived(
     scripts.map((script) => ({ id: script.name, label: script.name }))
   );
@@ -117,6 +121,7 @@ def run(context):
       const response = await fetch(`${healthUrl}${cacheBuster}t=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
+        headers: { "X-API-Key": apiKey },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -146,7 +151,10 @@ def run(context):
     try {
       const response = await fetch(serverUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey,
+        },
         body: JSON.stringify({ code: payload }),
       });
 
@@ -308,6 +316,20 @@ def run(context):
   });
 
   $effect(() => {
+    if (authReady) return;
+    const savedKey = localStorage.getItem(apiKeyStorageKey);
+    if (savedKey) {
+      apiKey = savedKey;
+    }
+    authReady = true;
+  });
+
+  $effect(() => {
+    if (!authReady) return;
+    localStorage.setItem(apiKeyStorageKey, apiKey);
+  });
+
+  $effect(() => {
     const healthUrl = getHealthUrl(serverUrl);
     if (!healthUrl) {
       serverOnline = false;
@@ -412,7 +434,9 @@ def run(context):
     />
   </div>
   <div class="flex-1"></div>
-  <ThemeToggle class="fixed top-4 right-4 z-[200]" />
+  <Tooltip text="Toggle theme" position="left">
+    <ThemeToggle class="fixed top-4 right-4 z-[200]" />
+  </Tooltip>
   <div class="relative z-0 mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
     <Card header={editorHeader} class="h-full">
       <div class="space-y-6">
@@ -438,7 +462,13 @@ def run(context):
           label="Server URL"
           type="url"
           bind:value={serverUrl}
-          placeholder="http://localhost:9100/mcp"
+          placeholder="http://127.0.0.1:9100/mcp"
+        />
+        <Field
+          label="API Key"
+          type="password"
+          bind:value={apiKey}
+          placeholder="Enter API key"
         />
 
         <div
@@ -474,28 +504,38 @@ def run(context):
         <div class="flex flex-wrap items-center gap-3">
           <CheckBox bind:checked={wrapInRun} label="Wrap in def run()" />
           <div class="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => openDialog("save")}>
-              <Download class="h-4 w-4" />
-            </Button>
-            <Button variant="secondary" onClick={() => openDialog("delete")}>
-              <Trash2 class="h-4 w-4" />
-            </Button>
-            <Button variant="secondary" onClick={exportAllScripts}>
-              <FileDown class="h-4 w-4" />
-            </Button>
+            <Tooltip text="Save script" position="top">
+              <Button variant="secondary" onClick={() => openDialog("save")}>
+                <Download class="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip text="Delete script" position="top">
+              <Button variant="secondary" onClick={() => openDialog("delete")}>
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip text="Export all scripts" position="top">
+              <Button variant="secondary" onClick={exportAllScripts}>
+                <FileDown class="h-4 w-4" />
+              </Button>
+            </Tooltip>
           </div>
           <div class="ml-auto flex items-center gap-2">
-            <Button variant="secondary" onClick={clearOutput}>
-              <Trash2 class="h-4 w-4" />
-            </Button>
-            <Button variant="primary" loaded={isRunning} onClick={runScript}>
-              <Play class="h-4 w-4" />
-            </Button>
+            <Tooltip text="Clear output" position="top">
+              <Button variant="secondary" onClick={clearOutput}>
+                <X class="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip text="Run script" position="top">
+              <Button variant="primary" loaded={isRunning} onClick={runScript}>
+                <Play class="h-4 w-4" />
+              </Button>
+            </Tooltip>
           </div>
         </div>
 
         <div
-          class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm"
+          class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm overflow-hidden"
         >
           <div
             class="flex items-center justify-between border-b border-[var(--border-color-default)] bg-[var(--color-bg-muted)] px-4 py-2 text-[var(--color-text-default)]"

@@ -3,7 +3,7 @@ from typing import Tuple
 from .mcp_server import start_mcp_server, stop_mcp_server
 from .task_manager import TaskManager
 
-HOST = "localhost"
+HOST = "127.0.0.1"
 PORT = 9100
 
 _server = None

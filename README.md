@@ -1,10 +1,11 @@
 # Fusion Script Console (Python + Svelte 5 Typescript + TailwindCSS)
 
-Fusion 360 add-in with an MCP server and a Svelte interface for running Python scripts. Includes a built-in start/stop panel, real-time server status monitoring, and local script storage with named entries and export to a single file.
+Fusion 360 add-in with an MCP server and a Svelte interface for running Python scripts. Includes a start/stop panel, real-time status monitoring, and local script storage with names and export to a single file.
 
 - MCP HTTP API (`/mcp`, `/health`) for external tools
 - Palette UI: editor, output, server status
 - Scripts are stored in `localStorage` with names and export
+- API access is protected by a token (API key)
 
 ---
 <!-- markdownlint-disable MD033 -->
@@ -15,7 +16,8 @@ Fusion 360 add-in with an MCP server and a Svelte interface for running Python s
   - [Overview](#overview)
   - [Features](#features)
   - [UI](#ui)
-  - [📄 License](#-license)
+  - [Token (API key)](#token-api-key)
+  - [License](#license)
 
 </details>
 
@@ -35,7 +37,20 @@ The project combines a Python add-in for Fusion 360 with a Svelte 5 frontend. Th
 - Code editor, output view, run controls
 - Save/delete via Dialog
 
-## 📄 License
+## Token (API key)
+
+The server listens only on `127.0.0.1` and requires an API key for `/mcp` and `/health`.
+
+1) Set the key in `.env`:
+```
+FUSION_MCP_API_KEY=YOUR_KEY
+```
+2) Restart Fusion 360 (or the add-in).
+3) Enter the same key in the UI field **API Key**.
+
+Without a matching key the server returns `401 Unauthorized`.
+
+## License
 
 MIT License - See [LICENSE](LICENSE.md) for details.
 

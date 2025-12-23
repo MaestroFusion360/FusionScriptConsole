@@ -2,6 +2,7 @@
 Minimal HTTP server for Fusion that accepts POST /mcp with Python code.
 """
 
+import hmac
 import json
 import threading
 import traceback
@@ -11,6 +12,7 @@ from typing import Any, Dict, Tuple, Optional
 
 from .task_manager import TaskManager
 from tools.execute_api_script import handler as execute_script_handler
+import config
 
 try:
     import adsk.core
@@ -28,7 +30,26 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 class MCPHandler(BaseHTTPRequestHandler):
     """HTTP request handler for minimal /mcp endpoint."""
 
+    def _is_authorized(self) -> bool:
+        api_key = config.get_api_key() or ""
+        if not api_key:
+            return False
+        header_key = self.headers.get('X-API-Key', '')
+        auth_header = self.headers.get('Authorization', '')
+        bearer_key = auth_header.replace('Bearer ', '', 1) if auth_header else ''
+        return hmac.compare_digest(header_key, api_key) or hmac.compare_digest(bearer_key, api_key)
+
+    def _send_unauthorized(self):
+        self.send_response(401)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(b'{"ok": false, "error": "Unauthorized"}')
+
     def do_POST(self):
+        if not self._is_authorized():
+            self._send_unauthorized()
+            return
         if self.path != '/mcp':
             self.send_error(404, "Not Found")
             return
@@ -61,11 +82,14 @@ class MCPHandler(BaseHTTPRequestHandler):
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, Authorization')
         self.end_headers()
 
     def do_GET(self):
         if self.path == '/health':
+            if not self._is_authorized():
+                self._send_unauthorized()
+                return
             self._send_json_response({"status": "healthy"})
             return
         self.send_error(404, "Not Found")

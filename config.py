@@ -4,6 +4,24 @@
 
 import os
 
+
+def _load_dotenv(path: str) -> None:
+    if not os.path.isfile(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        pass
+
 # Flag that indicates to run in Debug mode or not. When running in Debug mode
 # more information is written to the Text Command window. Generally, it's useful
 # to set this to True while developing an add-in and set it to False when you
@@ -19,3 +37,11 @@ COMPANY_NAME = 'ACME'
 
 # Palettes
 sample_palette_id = f'{COMPANY_NAME}_{ADDIN_NAME}_palette_id'
+
+# MCP auth
+def get_api_key() -> str:
+    _load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+    return os.environ.get("FUSION_MCP_API_KEY", "")
+
+
+API_KEY = get_api_key()
