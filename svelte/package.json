@@ -1,7 +1,7 @@
 {
   "name": "fuision-script-console",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,7 +24,7 @@
     "@types/prismjs": "^1.26.5",
     "lucide-svelte": "^0.562.0",
     "prismjs": "^1.30.0",
-    "svelte-comp": "^1.1.7",
+    "svelte-comp": "^1.2.2",
     "tailwindcss": "^4.1.18"
   }
 }
