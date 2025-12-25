@@ -50,7 +50,7 @@ A Fusion add-in that provides HTTP API functionality for Model Context Protocol 
 
 ## Token (API key)
 
-The server listens only on `127.0.0.1` and requires an API key for `/api` and `/health`.
+The server listens only on `127.0.0.1`. The `/api` endpoint requires an API key, while `/health` is always available for status checks.
 <!-- markdownlint-disable MD029 -->
 1. Set the key in `.env`:
 

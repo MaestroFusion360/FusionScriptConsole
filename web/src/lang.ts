@@ -1,4 +1,4 @@
-export type LangKey = "en" | "ru";
+﻿export type LangKey = "en" | "ru";
 
 export type LangOption = { label: string; value: LangKey };
 
@@ -53,6 +53,7 @@ export type Texts = {
     };
     checkbox: {
       wrapInRun: string;
+      autoImport: string;
     };
     messages: {
       running: string;
@@ -82,7 +83,7 @@ export const TEXTS: Record<LangKey, Texts> = {
   ru: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.8",
+      version: "v0.0.9",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",
@@ -131,6 +132,7 @@ export const TEXTS: Record<LangKey, Texts> = {
       },
       checkbox: {
         wrapInRun: "Оборачивать в def run()",
+        autoImport: "Auto-import adsk.core/fusion/cam",
       },
       messages: {
         running: "Выполняется...",
@@ -168,7 +170,7 @@ def run(context):
   en: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.8",
+      version: "v0.0.9",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",
@@ -217,6 +219,7 @@ def run(context):
       },
       checkbox: {
         wrapInRun: "Wrap in def run()",
+        autoImport: "Auto-import adsk.core/fusion/cam",
       },
       messages: {
         running: "Running...",
@@ -252,3 +255,4 @@ def run(context):
     },
   },
 };
+

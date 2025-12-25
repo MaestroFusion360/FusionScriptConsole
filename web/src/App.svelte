@@ -1,23 +1,17 @@
 <script lang="ts">
-  import {
-    Button,
-    Card,
-    CheckBox,
-    CodeView,
-    Dialog,
-    Field,
-    Hamburger,
-    Select,
-    ThemeToggle,
-    Tooltip,
-    TEXT,
-  } from "svelte-comp";
-  import { Download, FileDown, Play, Trash2, Terminal, X } from "lucide-svelte";
+  import { setContext } from "svelte";
+  import { Card, ThemeToggle, Tooltip } from "svelte-comp";
   import { TEXTS, type LangKey } from "./lang";
   import { SvelteURL } from "svelte/reactivity";
+  import HeaderStatus from "./components/HeaderStatus.svelte";
+  import EditorPanel from "./components/EditorPanel.svelte";
+  import OutputPanel from "./components/OutputPanel.svelte";
+  import ScriptDialog, {
+    type DialogAction,
+  } from "./components/ScriptDialog.svelte";
+  import SidebarMenu from "./components/SidebarMenu.svelte";
 
   type Status = "idle" | "running" | "ok" | "error";
-  type DialogAction = "save" | "delete" | null;
   type SavedScript = {
     name: string;
     code: string;
@@ -45,13 +39,25 @@
   const HEALTH_POLL_MS = 2000;
   const HEALTH_TIMEOUT_MS = 1200;
   const RUN_DEF_RE = /def\s+run\s*\(/;
+  const AUTO_IMPORT_LINES = [
+    "import adsk.core",
+    "import adsk.fusion",
+    "import adsk.cam",
+  ];
+  const AUTO_IMPORT_RES = [
+    /(^|\n)\s*import\s+adsk\.core\b/,
+    /(^|\n)\s*import\s+adsk\.fusion\b/,
+    /(^|\n)\s*import\s+adsk\.cam\b/,
+  ];
 
   let langCtx = $state<{ value: LangKey }>({ value: DEFAULT_LANG });
   const t = $derived(TEXTS[langCtx.value]);
+  setContext("lang", langCtx);
 
   let serverUrl = $state(DEFAULT_SERVER_URL);
   let apiKey = $state("");
   let wrapInRun = $state(true);
+  let autoImport = $state(false);
   let code = $state(DEFAULT_CODE);
   let output = $state("");
   let status = $state<Status>("idle");
@@ -90,13 +96,6 @@
       : "bg-[var(--color-bg-danger)] text-[var(--color-text-danger)]"
   );
 
-
-  const appMeta = $derived({
-    version: t.app.version,
-    title: t.app.title,
-    footer: t.app.footer,
-    authorUrl: t.app.authorUrl,
-  });
 
   function wrapCode(source: string): string {
     const lines = source.split("\n");
@@ -174,10 +173,20 @@
   }
 
   function getPayload(): string {
-    if (wrapInRun && !RUN_DEF_RE.test(code)) {
-      return wrapCode(code);
+    let header = "";
+    if (autoImport) {
+      const missing = AUTO_IMPORT_LINES.filter(
+        (_, index) => !AUTO_IMPORT_RES[index].test(code)
+      );
+      if (missing.length) {
+        header = `${missing.join("\n")}\n\n`;
+      }
     }
-    return code;
+
+    if (wrapInRun && !RUN_DEF_RE.test(code)) {
+      return `${header}${wrapCode(code)}`;
+    }
+    return `${header}${code}`;
   }
 
   async function runScript() {
@@ -264,7 +273,9 @@
 
   function exportAllScripts() {
     if (!scripts.length) return;
-    const parts = scripts.map((script) => `### ${script.name}\n${script.code}`);
+    const parts = scripts.map(
+      (script) => `"""${script.name}"""\n${script.code}`
+    );
     const content = parts.join("\n\n---\n\n");
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -397,92 +408,30 @@
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
-<Dialog
+<ScriptDialog
   open={dialogOpen}
   title={dialogTitle}
   message={dialogMessage}
+  action={dialogAction}
+  bind:name={dialogName}
+  error={dialogError}
   onConfirm={handleDialogConfirm}
   onCancel={handleDialogClose}
   onClose={() => {}}
-  class="fusion-dialog"
->
-  <div class="mt-3 space-y-3">
-    {#if dialogAction === "save"}
-      <Field
-        label={t.app.fields.scriptNameLabel}
-        bind:value={dialogName}
-        placeholder={t.app.fields.scriptNamePlaceholder}
-      />
-      {#if dialogError}
-        <p class="text-xs text-[var(--color-text-danger)]">{dialogError}</p>
-      {/if}
-    {/if}
-  </div>
-</Dialog>
+/>
 
 {#snippet editorHeader()}
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <p
-        class="text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
-      >
-        {t.app.brand}
-      </p>
-      <h2 class="text-lg font-semibold">{t.app.title}</h2>
-    </div>
-    <span
-      class={`rounded-full px-3 py-1 text-xs font-semibold ${serverStatusClass}`}
-    >
-      {serverStatusLabel}
-    </span>
-  </div>
-{/snippet}
-
-{#snippet burgerHeader()}
-  <div class="p-3 flex flex-col items-center text-center gap-1">
-    <div class="text-sm font-semibold text-[var(--color-text-default)]">
-      {appMeta.title}
-    </div>
-    <div
-      class="text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
-    >
-      {appMeta.version}
-    </div>
-  </div>
-{/snippet}
-
-{#snippet burgerFooter()}
-  <div class="text-center p-2 flex flex-col items-center gap-4">
-    <Select
-      sz="sm"
-      options={t.app.language.options}
-      bind:value={langCtx.value}
-      label={t.app.language.label}
-    />
-    <a
-      class="text-xs italic text-[var(--color-text-muted)] hover:text-[var(--color-text-default)]"
-      href={appMeta.authorUrl}
-      target="_blank"
-      rel="noreferrer"
-    >
-      {appMeta.footer}
-    </a>
-  </div>
+  <HeaderStatus statusLabel={serverStatusLabel} statusClass={serverStatusClass} />
 {/snippet}
 
 <main
   class="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-default)]"
 >
   <div class="flex items-center">
-    <Hamburger
-      header={burgerHeader}
-      footer={burgerFooter}
-      menuItems={menu}
+    <SidebarMenu
+      menu={menu}
       activeItem={active}
       onSelect={handleMenuSelect}
-      closeOnSelect={true}
-      width={300}
-      class={TEXT.md}
     />
   </div>
   <div class="flex-1"></div>
@@ -492,135 +441,19 @@
   <div class="relative z-0 mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
     <Card header={editorHeader} class="h-full">
       <div class="space-y-6">
-        <div class="flex flex-wrap items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)] text-[var(--color-text-default)] shadow-lg"
-          >
-            <Terminal class="h-5 w-5" />
-          </div>
-          <div>
-            <p
-              class="text-xs uppercase tracking-[0.35em] text-[var(--color-text-muted)]"
-            >
-              {t.app.brand}
-            </p>
-            <p class="text-sm text-[var(--color-text-muted)]">
-              {t.app.subtitle}
-            </p>
-          </div>
-        </div>
-
-        <Field
-          label={t.app.fields.serverUrlLabel}
-          type="url"
-          bind:value={serverUrl}
-          placeholder={t.app.fields.serverUrlPlaceholder}
+        <EditorPanel
+          bind:serverUrl
+          bind:apiKey
+          bind:wrapInRun
+          bind:autoImport
+          bind:code
+          isRunning={isRunning}
+          onOpenDialog={openDialog}
+          onExportAll={exportAllScripts}
+          onClearOutput={clearOutput}
+          onRun={runScript}
         />
-        <Field
-          label={t.app.fields.apiKeyLabel}
-          type="password"
-          bind:value={apiKey}
-          placeholder={t.app.fields.apiKeyPlaceholder}
-        />
-
-        <div
-          class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm shrink-0 overflow-hidden"
-        >
-          <div
-            class="flex items-center justify-between border-b border-[var(--border-color-default)] bg-[var(--color-bg-muted)] px-4 py-2 text-[var(--color-text-default)]"
-          >
-            <p
-              class="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
-            >
-              {t.app.sections.pythonScript}
-            </p>
-            <span class="text-[11px] text-[var(--color-text-muted)]"
-              >{t.app.hints.runShortcut}</span
-            >
-          </div>
-
-          <div class="editor-shell h-[320px] overflow-hidden">
-            <CodeView
-              bind:code
-              language="python"
-              title=""
-              showCopyButton={true}
-              showLineNumbers={true}
-              editable={true}
-              activeLine={true}
-              sz="sm"
-            />
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <CheckBox bind:checked={wrapInRun} label={t.app.checkbox.wrapInRun} />
-          <div class="flex items-center gap-2">
-            <Tooltip text={t.app.buttons.save} position="top">
-              <Button variant="secondary" onClick={() => openDialog("save")}>
-                <Download class="h-4 w-4" />
-              </Button>
-            </Tooltip>
-            <Tooltip text={t.app.buttons.delete} position="top">
-              <Button variant="secondary" onClick={() => openDialog("delete")}>
-                <Trash2 class="h-4 w-4" />
-              </Button>
-            </Tooltip>
-            <Tooltip text={t.app.buttons.exportAll} position="top">
-              <Button variant="secondary" onClick={exportAllScripts}>
-                <FileDown class="h-4 w-4" />
-              </Button>
-            </Tooltip>
-          </div>
-          <div class="ml-auto flex items-center gap-2">
-            <Tooltip text={t.app.buttons.clearOutput} position="top">
-              <Button variant="secondary" onClick={clearOutput}>
-                <X class="h-4 w-4" />
-              </Button>
-            </Tooltip>
-            <Tooltip text={t.app.buttons.run} position="top">
-              <Button variant="primary" loaded={isRunning} onClick={runScript}>
-                <Play class="h-4 w-4" />
-              </Button>
-            </Tooltip>
-          </div>
-        </div>
-
-        <div
-          class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm overflow-hidden"
-        >
-          <div
-            class="flex items-center justify-between border-b border-[var(--border-color-default)] bg-[var(--color-bg-muted)] px-4 py-2 text-[var(--color-text-default)]"
-          >
-            <p
-              class="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
-            >
-              {t.app.sections.output}
-            </p>
-            <span class="text-[11px] text-[var(--color-text-muted)]"
-              >{output ? "" : t.app.hints.noOutput}</span
-            >
-          </div>
-          <div class="editor-shell h-[320px] overflow-hidden">
-            <CodeView
-              code={output || ""}
-              language="txt"
-              title=""
-              showCopyButton={false}
-              showLineNumbers={false}
-              editable={false}
-              sz="sm"
-            />
-          </div>
-        </div>
-
-        {#if lastError}
-          <div
-            class="rounded-lg border border-[var(--color-bg-danger)] bg-[var(--color-bg-danger)] px-3 py-2 text-xs text-[var(--color-text-danger)]"
-          >
-            {lastError}
-          </div>
-        {/if}
+        <OutputPanel {output} {lastError} />
       </div>
     </Card>
   </div>
