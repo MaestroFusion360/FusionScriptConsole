@@ -17,6 +17,8 @@ export type Texts = {
       apiKeyPlaceholder: string;
       scriptNameLabel: string;
       scriptNamePlaceholder: string;
+      searchLabel: string;
+      searchPlaceholder: string;
     };
     dialog: {
       saveTitle: string;
@@ -64,6 +66,7 @@ export type Texts = {
       invalidServerUrl: string;
       httpPrefix: string;
       emptyResponse: string;
+      searchNoResults: string;
     };
     defaults: {
       serverUrl: string;
@@ -83,7 +86,7 @@ export const TEXTS: Record<LangKey, Texts> = {
   ru: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.9",
+      version: "v0.1.0",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",
@@ -95,6 +98,8 @@ export const TEXTS: Record<LangKey, Texts> = {
         apiKeyPlaceholder: "Введите API ключ",
         scriptNameLabel: "Имя скрипта",
         scriptNamePlaceholder: "Мой скрипт",
+        searchLabel: "Поиск",
+        searchPlaceholder: "Поиск по скриптам",
       },
       dialog: {
         saveTitle: "Сохранить скрипт",
@@ -143,6 +148,7 @@ export const TEXTS: Record<LangKey, Texts> = {
         invalidServerUrl: "Некорректный URL сервера",
         httpPrefix: "HTTP",
         emptyResponse: "(пустой ответ)",
+        searchNoResults: "Совпадений не найдено",
       },
       defaults: {
         serverUrl: "http://127.0.0.1:9100/api",
@@ -170,7 +176,7 @@ def run(context):
   en: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.9",
+      version: "v0.1.0",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",
@@ -182,6 +188,8 @@ def run(context):
         apiKeyPlaceholder: "Enter API key",
         scriptNameLabel: "Script name",
         scriptNamePlaceholder: "My script",
+        searchLabel: "Search",
+        searchPlaceholder: "Search scripts",
       },
       dialog: {
         saveTitle: "Save script",
@@ -230,6 +238,7 @@ def run(context):
         invalidServerUrl: "Invalid server URL",
         httpPrefix: "HTTP",
         emptyResponse: "(empty response)",
+        searchNoResults: "No matches found",
       },
       defaults: {
         serverUrl: "http://127.0.0.1:9100/api",

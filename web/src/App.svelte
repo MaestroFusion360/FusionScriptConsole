@@ -10,6 +10,7 @@
     type DialogAction,
   } from "./components/ScriptDialog.svelte";
   import SidebarMenu from "./components/SidebarMenu.svelte";
+  import SearchOverlay from "./components/SearchOverlay.svelte";
 
   type Status = "idle" | "running" | "ok" | "error";
   type SavedScript = {
@@ -59,6 +60,7 @@
   let wrapInRun = $state(true);
   let autoImport = $state(false);
   let code = $state(DEFAULT_CODE);
+  let searchQuery = $state("");
   let output = $state("");
   let status = $state<Status>("idle");
   let lastError = $state("");
@@ -74,6 +76,15 @@
   let dialogError = $state("");
   let storageReady = $state(false);
   let authReady = $state(false);
+  const searchResults = $derived.by(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return scripts.filter((script) => {
+      const name = script.name.toLowerCase();
+      const body = script.code.toLowerCase();
+      return name.includes(query) || body.includes(query);
+    });
+  });
   const menu = $derived(
     scripts.map((script) => ({ id: script.name, label: script.name }))
   );
@@ -438,7 +449,12 @@
   <Tooltip text={t.app.buttons.toggleTheme} position="left">
     <ThemeToggle class="fixed top-4 right-4 z-[200]" />
   </Tooltip>
-  <div class="relative z-0 mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
+  <SearchOverlay
+    bind:value={searchQuery}
+    results={searchResults}
+    onSelect={handleMenuSelect}
+  />
+  <div class="relative z-0 mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10 pt-24">
     <Card header={editorHeader} class="h-full">
       <div class="space-y-6">
         <EditorPanel
