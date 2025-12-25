@@ -82,7 +82,7 @@ export const TEXTS: Record<LangKey, Texts> = {
   ru: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.7",
+      version: "v0.0.8",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",
@@ -168,7 +168,7 @@ def run(context):
   en: {
     app: {
       title: "Fusion Script Console",
-      version: "v0.0.7",
+      version: "v0.0.8",
       footer: "(c) 2025 MaestroFusion360",
       authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
       brand: "Fusion API Server",

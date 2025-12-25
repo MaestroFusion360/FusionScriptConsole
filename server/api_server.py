@@ -4,6 +4,7 @@ import hmac
 import json
 import threading
 import traceback
+from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Any, Dict, Tuple, Optional
@@ -48,7 +49,7 @@ class ApiServerHandler(BaseHTTPRequestHandler):
         if not self._is_authorized():
             self._send_unauthorized()
             return
-        if self.path != '/api':
+        if urlparse(self.path).path != '/api':
             self.send_error(404, "Not Found")
             return
 
@@ -79,15 +80,12 @@ class ApiServerHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, Authorization')
         self.end_headers()
 
     def do_GET(self):
-        if self.path == '/health':
-            if not self._is_authorized():
-                self._send_unauthorized()
-                return
+        if urlparse(self.path).path == '/health':
             self._send_json_response({"status": "healthy"})
             return
         self.send_error(404, "Not Found")
@@ -183,3 +181,4 @@ def stop_api_server(http_server, server_thread, timeout=5):
         if app:
             app.log(f"Error stopping API server: {str(exc)}")
         return False
+

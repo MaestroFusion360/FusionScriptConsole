@@ -14,6 +14,7 @@
   } from "svelte-comp";
   import { Download, FileDown, Play, Trash2, Terminal, X } from "lucide-svelte";
   import { TEXTS, type LangKey } from "./lang";
+  import { SvelteURL } from "svelte/reactivity";
 
   type Status = "idle" | "running" | "ok" | "error";
   type DialogAction = "save" | "delete" | null;
@@ -21,6 +22,15 @@
     name: string;
     code: string;
     updatedAt: number;
+  };
+  type ApiResponse = {
+    ok?: boolean;
+    output?: unknown;
+    error?: string;
+    result?: {
+      output?: unknown;
+      content?: Array<{ text?: string }>;
+    };
   };
 
   const BASE_TEXTS = TEXTS.en;
@@ -47,7 +57,6 @@
   let status = $state<Status>("idle");
   let lastError = $state("");
   let serverOnline = $state(false);
-  let serverLastError = $state("");
 
   const isRunning = $derived(status === "running");
   let scripts = $state<SavedScript[]>([]);
@@ -80,6 +89,8 @@
       ? "bg-[var(--color-bg-success)] text-[var(--color-text-success)]"
       : "bg-[var(--color-bg-danger)] text-[var(--color-text-danger)]"
   );
+
+
   const appMeta = $derived({
     version: t.app.version,
     title: t.app.title,
@@ -96,7 +107,7 @@
 
   function getHealthUrl(url: string): string | null {
     try {
-      const parsed = new URL(url);
+      const parsed = new SvelteURL(url);
       parsed.pathname = "/health";
       parsed.search = "";
       parsed.hash = "";
@@ -106,9 +117,8 @@
     }
   }
 
-  function setServerStatus(isOnline: boolean, error: string) {
+  function setServerStatus(isOnline: boolean) {
     serverOnline = isOnline;
-    serverLastError = error;
   }
 
   async function checkServerHealth(healthUrl: string) {
@@ -127,31 +137,38 @@
       );
       clearTimeout(timeoutId);
       if (response.ok) {
-        setServerStatus(true, "");
+        setServerStatus(true);
       } else {
-        setServerStatus(
-          false,
-          `${t.app.messages.httpPrefix} ${response.status}`
-        );
+        setServerStatus(false);
       }
-    } catch (err) {
-      setServerStatus(false, err instanceof Error ? err.message : String(err));
+    } catch {
+      setServerStatus(false);
     }
   }
 
-  function safeJsonParse(raw: string): { ok: true; data: any } | { ok: false } {
+  function safeJsonParse(
+    raw: string
+  ): { ok: true; data: ApiResponse } | { ok: false } {
     try {
-      return { ok: true, data: JSON.parse(raw) };
+      return { ok: true, data: JSON.parse(raw) as ApiResponse };
     } catch {
       return { ok: false };
     }
   }
 
-  function getResultText(data: any): string | null {
+  function normalizeText(value: unknown): string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    const text = String(value);
+    return text.trim().length ? text : null;
+  }
+
+  function getResultText(data: ApiResponse): string | null {
     return (
-      data?.output ??
-      data?.result?.output ??
-      data?.result?.content?.[0]?.text ??
+      normalizeText(data.output) ??
+      normalizeText(data.result?.output) ??
+      normalizeText(data.result?.content?.[0]?.text) ??
       null
     );
   }
@@ -206,16 +223,6 @@
       status = "error";
       lastError = err instanceof Error ? err.message : String(err);
       output = `${t.app.messages.requestFailedPrefix}${lastError}`;
-    }
-  }
-
-  async function copyOutput() {
-    if (!output) return;
-    try {
-      await navigator.clipboard.writeText(output);
-    } catch {
-      lastError = t.app.messages.clipboardFailed;
-      status = "error";
     }
   }
 
@@ -371,7 +378,8 @@
   $effect(() => {
     const healthUrl = getHealthUrl(serverUrl);
     if (!healthUrl) {
-      setServerStatus(false, t.app.messages.invalidServerUrl);
+      setServerStatus(false);
+      lastError = t.app.messages.invalidServerUrl;
       return;
     }
     let cancelled = false;
@@ -617,3 +625,7 @@
     </Card>
   </div>
 </main>
+
+
+
+
