@@ -45,7 +45,7 @@ class TaskManager:
             return True
 
         try:
-            cls._custom_event = app.registerCustomEvent('Fusion MCP Addin.TaskManagerEvent')
+            cls._custom_event = app.registerCustomEvent('Fusion API Server Addin.TaskManagerEvent')
             cls._event_handler = TaskEventHandler(cls._pending_tasks)
             cls._custom_event.add(cls._event_handler)
 

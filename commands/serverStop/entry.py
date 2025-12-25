@@ -1,4 +1,4 @@
-"""UI command to stop the MCP server."""
+"""UI command to stop the API server."""
 
 import adsk.core
 import os
@@ -11,7 +11,7 @@ ui = app.userInterface
 
 CMD_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_server_stop'
 CMD_NAME = 'Stop Fusion Script Console'
-CMD_Description = 'Stop Fusion MCP server'
+CMD_Description = 'Stop Fusion API server'
 IS_PROMOTED = False
 
 # UI placement
@@ -81,7 +81,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
 def command_execute(args: adsk.core.CommandEventArgs):
     if not is_server_running():
-        ui.messageBox('Fusion MCP server is not running.')
+        ui.messageBox('Fusion API server is not running.')
         return
 
     ok, message = stop_server()

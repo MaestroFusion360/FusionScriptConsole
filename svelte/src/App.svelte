@@ -31,7 +31,7 @@ def run(context):
     return app.activeDocument.name
 `;
 
-  let serverUrl = $state("http://127.0.0.1:9100/mcp");
+  let serverUrl = $state("http://127.0.0.1:9100/api");
   let apiKey = $state("");
   let wrapInRun = $state(true);
   let code = $state(defaultCode);
@@ -89,7 +89,7 @@ def run(context):
       : "bg-[var(--color-bg-danger)] text-[var(--color-text-danger)]"
   );
   const appMeta = {
-    version: "v0.0.1",
+    version: "v0.0.6",
     title: "Fusion Script Console",
     footer: "(c) 2025 MaestroFusion360",
     authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
@@ -103,7 +103,7 @@ def run(context):
     );
   }
 
-  // Convert MCP endpoint to /health URL.
+  // Convert API endpoint to /health URL.
   function getHealthUrl(url: string): string | null {
     try {
       const parsed = new URL(url);
@@ -142,7 +142,7 @@ def run(context):
     }
   }
 
-  // Execute script via MCP.
+  // Execute script via API server.
   async function runScript() {
     status = "running";
     lastError = "";
@@ -389,7 +389,7 @@ def run(context):
       <p
         class="text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
       >
-        Fusion MCP
+        Fusion API Server
       </p>
       <h2 class="text-lg font-semibold">Fusion Script Console</h2>
     </div>
@@ -459,7 +459,7 @@ def run(context):
             <p
               class="text-xs uppercase tracking-[0.35em] text-[var(--color-text-muted)]"
             >
-              Fusion MCP
+              Fusion API Server
             </p>
             <p class="text-sm text-[var(--color-text-muted)]">
               Send Python to Fusion 360 and read the output.
@@ -471,7 +471,7 @@ def run(context):
           label="Server URL"
           type="url"
           bind:value={serverUrl}
-          placeholder="http://127.0.0.1:9100/mcp"
+          placeholder="http://127.0.0.1:9100/api"
         />
         <Field
           label="API Key"

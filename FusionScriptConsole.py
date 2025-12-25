@@ -29,7 +29,7 @@ def run(context):
             if app:
                 app.log(message)
     except Exception:
-        app.log(f'Failed to start Fusion MCP Add-in:\n{traceback.format_exc()}')
+        app.log(f'Failed to start Fusion API Server Add-in:\n{traceback.format_exc()}')
 
 
 def stop(context):
@@ -38,7 +38,7 @@ def stop(context):
         commands.stop()
         ok, message = stop_server()
         if app:
-            app.log(message if ok else f"Error stopping Fusion MCP Add-in: {message}")
+            app.log(message if ok else f"Error stopping Fusion API Server Add-in: {message}")
     except Exception:
         if app:
-            app.log(f"Error stopping Fusion MCP Add-in:\n{traceback.format_exc()}")
+            app.log(f"Error stopping Fusion API Server Add-in:\n{traceback.format_exc()}")

@@ -1,13 +1,8 @@
 """
-Server Package for Fusion MCP Add-in
+Server package for the Fusion API Server add-in.
 
-This package provides MCP server functionality and thread-safe execution capabilities
-for Fusion 360 add-ins. It consists of two main components:
-
-1. SimpleMCPServer - A simple minimal dependency MCP server implementation
-2. ThreadExecutor - Provides thread-safe execution of Fusion API calls
-
-The package also provides convenience functions for easy server management.
+This package provides API server functionality and thread-safe execution
+capabilities for Fusion 360 add-ins.
 """
 
 # Import main classes

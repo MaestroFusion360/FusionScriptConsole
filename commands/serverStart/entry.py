@@ -1,4 +1,4 @@
-"""UI command to start the MCP server."""
+"""UI command to start the API server."""
 
 import adsk.core
 import os
@@ -11,7 +11,7 @@ ui = app.userInterface
 
 CMD_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_server'
 CMD_NAME = 'Fusion Script Console'
-CMD_Description = 'Start Fusion MCP server'
+CMD_Description = 'Start Fusion API server'
 IS_PROMOTED = True
 
 # UI placement
@@ -80,7 +80,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
 def command_execute(args: adsk.core.CommandEventArgs):
     if is_server_running():
-        ui.messageBox(f'Fusion MCP server is already running at {get_server_url()}')
+        ui.messageBox(f'Fusion API server is already running at {get_server_url()}')
         return
 
     ok, message = start_server()

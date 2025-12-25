@@ -1,4 +1,4 @@
-"""Minimal HTTP server with /mcp and /health endpoints."""
+"""Minimal HTTP server with /api and /health endpoints."""
 
 import hmac
 import json
@@ -9,7 +9,7 @@ from socketserver import ThreadingMixIn
 from typing import Any, Dict, Tuple, Optional
 
 from .task_manager import TaskManager
-from tools.execute_api_script import handler as execute_script_handler
+from utils.execute_api_script import handler as execute_script_handler
 import config
 
 try:
@@ -25,8 +25,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     allow_reuse_address = True
 
 
-class MCPHandler(BaseHTTPRequestHandler):
-    """HTTP handler for MCP endpoints."""
+class ApiServerHandler(BaseHTTPRequestHandler):
+    """HTTP handler for API server endpoints."""
 
     def _is_authorized(self) -> bool:
         api_key = config.get_api_key() or ""
@@ -48,7 +48,7 @@ class MCPHandler(BaseHTTPRequestHandler):
         if not self._is_authorized():
             self._send_unauthorized()
             return
-        if self.path != '/mcp':
+        if self.path != '/api':
             self.send_error(404, "Not Found")
             return
 
@@ -143,31 +143,31 @@ class MCPHandler(BaseHTTPRequestHandler):
         return
 
 
-def start_mcp_server(
+def start_api_server(
     host: str = 'localhost',
     port: int = 9100
 ) -> Tuple[Optional[ThreadedHTTPServer], Optional[threading.Thread]]:
-    """Start the MCP HTTP server."""
+    """Start the API server."""
     try:
         server_address = (host, port)
 
-        http_server = ThreadedHTTPServer(server_address, MCPHandler)
+        http_server = ThreadedHTTPServer(server_address, ApiServerHandler)
         server_thread = threading.Thread(
             target=http_server.serve_forever,
             daemon=True,
-            name=f"MCP-Server-{host}:{port}"
+            name=f"API-Server-{host}:{port}"
         )
         server_thread.start()
         return http_server, server_thread
     except Exception as exc:
-        print(f"Failed to start MCP server: {str(exc)}")
+        print(f"Failed to start API server: {str(exc)}")
         if app:
-            app.log(f"Failed to start MCP server: {str(exc)}\n{traceback.format_exc()}")
+            app.log(f"Failed to start API server: {str(exc)}\n{traceback.format_exc()}")
         return None, None
 
 
-def stop_mcp_server(http_server, server_thread, timeout=5):
-    """Stop the MCP HTTP server."""
+def stop_api_server(http_server, server_thread, timeout=5):
+    """Stop the API server."""
     try:
         if http_server:
             http_server.shutdown()
@@ -179,7 +179,7 @@ def stop_mcp_server(http_server, server_thread, timeout=5):
 
         return True
     except Exception as exc:
-        print(f"Error stopping MCP server: {str(exc)}")
+        print(f"Error stopping API server: {str(exc)}")
         if app:
-            app.log(f"Error stopping MCP server: {str(exc)}")
+            app.log(f"Error stopping API server: {str(exc)}")
         return False

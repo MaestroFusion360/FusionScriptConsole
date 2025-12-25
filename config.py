@@ -38,10 +38,10 @@ COMPANY_NAME = 'ACME'
 # Palettes
 sample_palette_id = f'{COMPANY_NAME}_{ADDIN_NAME}_palette_id'
 
-# MCP auth
+# API server auth
 def get_api_key() -> str:
     _load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-    return os.environ.get("FUSION_MCP_API_KEY", "")
+    return os.environ.get("FUSION_API_SERVER_KEY", "")
 
 
 API_KEY = get_api_key()
