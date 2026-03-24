@@ -1,1 +1,0 @@
-"""Stop server command package."""

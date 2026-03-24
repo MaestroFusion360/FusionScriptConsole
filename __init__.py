@@ -1,1 +1,0 @@
-"""FusionScriptConsole package marker."""
