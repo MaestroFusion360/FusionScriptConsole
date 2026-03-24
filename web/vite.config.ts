@@ -17,7 +17,7 @@ const lang = "en";
 
 // For GitHub Pages: `/${repoName}/`
 // For custom domain or local development: "/"
-const basePath = "/"; // Adjust per deployment
+const basePath = "/FusionScriptConsole/"; // Adjust per deployment
 
 export default defineConfig({
   plugins: [
