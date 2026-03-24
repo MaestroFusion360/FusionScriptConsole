@@ -1,7 +1,15 @@
 <script lang="ts">
   import { getContext } from "svelte";
   import { Button, CheckBox, CodeView, Field, Tooltip } from "svelte-comp";
-  import { Download, FileDown, Play, Trash2, Terminal, X } from "lucide-svelte";
+  import {
+    Download,
+    FileDown,
+    FileUp,
+    Play,
+    Trash2,
+    Terminal,
+    X,
+  } from "lucide-svelte";
   import { TEXTS, type LangKey } from "../lang";
 
   type Props = {
@@ -12,6 +20,7 @@
     code: string;
     isRunning?: boolean;
     onOpenDialog?: (action: "save" | "delete") => void;
+    onImportAll?: () => void;
     onExportAll?: () => void;
     onClearOutput?: () => void;
     onRun?: () => void;
@@ -25,6 +34,7 @@
     code = $bindable(),
     isRunning = false,
     onOpenDialog = () => {},
+    onImportAll = () => {},
     onExportAll = () => {},
     onClearOutput = () => {},
     onRun = () => {},
@@ -34,7 +44,7 @@
   const t = $derived(TEXTS[lang.value].app);
 </script>
 
-<div class="space-y-6">
+<div class="min-w-0 space-y-4 md:space-y-6">
   <div class="flex flex-wrap items-center gap-3">
     <div
       class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)] text-[var(--color-text-default)] shadow-lg"
@@ -63,7 +73,7 @@
   />
 
   <div
-    class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm shrink-0 overflow-hidden"
+    class="min-w-0 shrink-0 overflow-hidden rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm"
   >
     <div
       class="flex items-center justify-between border-b border-[var(--border-color-default)] bg-[var(--color-bg-muted)] px-4 py-2 text-[var(--color-text-default)]"
@@ -76,7 +86,7 @@
       </span>
     </div>
 
-    <div class="editor-shell h-[320px] overflow-hidden">
+    <div class="editor-shell h-64 overflow-hidden md:h-[320px]">
       <CodeView
         bind:code
         language="python"
@@ -90,10 +100,10 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap items-center gap-3">
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
     <CheckBox bind:checked={wrapInRun} label={t.checkbox.wrapInRun} />
     <CheckBox bind:checked={autoImport} label={t.checkbox.autoImport} />
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <Tooltip text={t.buttons.save} position="top">
         <Button variant="secondary" onClick={() => onOpenDialog("save")}>
           <Download class="h-4 w-4" />
@@ -104,13 +114,18 @@
           <Trash2 class="h-4 w-4" />
         </Button>
       </Tooltip>
-      <Tooltip text={t.buttons.exportAll} position="top">
-        <Button variant="secondary" onClick={onExportAll}>
+      <Tooltip text={t.buttons.importAll} position="top">
+        <Button variant="secondary" onClick={onImportAll}>
           <FileDown class="h-4 w-4" />
         </Button>
       </Tooltip>
+      <Tooltip text={t.buttons.exportAll} position="top">
+        <Button variant="secondary" onClick={onExportAll}>
+          <FileUp class="h-4 w-4" />
+        </Button>
+      </Tooltip>
     </div>
-    <div class="ml-auto flex items-center gap-2">
+    <div class="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
       <Tooltip text={t.buttons.clearOutput} position="top">
         <Button variant="secondary" onClick={onClearOutput}>
           <X class="h-4 w-4" />

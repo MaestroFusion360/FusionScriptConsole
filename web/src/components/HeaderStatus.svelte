@@ -20,7 +20,9 @@
     </p>
     <h2 class="text-lg font-semibold">{t.title}</h2>
   </div>
-  <span class={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>
+  <span
+    class={`max-w-full whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}
+  >
     {statusLabel}
   </span>
 </div>

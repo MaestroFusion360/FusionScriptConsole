@@ -26,7 +26,8 @@ def start_server() -> Tuple[bool, str]:
         return True, f"Fusion API server is already running at {get_server_url()}"
 
     if not TaskManager.is_running():
-        TaskManager.start()
+        if not TaskManager.start():
+            return False, "Failed to start TaskManager. API server was not started."
 
     _server, _thread = start_api_server(host=HOST, port=PORT)
     if _server:

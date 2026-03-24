@@ -2,7 +2,6 @@
   import { setContext } from "svelte";
   import { Card, ThemeToggle, Tooltip } from "svelte-comp";
   import { TEXTS, type LangKey } from "./lang";
-  import { SvelteURL } from "svelte/reactivity";
   import HeaderStatus from "./components/HeaderStatus.svelte";
   import EditorPanel from "./components/EditorPanel.svelte";
   import OutputPanel from "./components/OutputPanel.svelte";
@@ -11,45 +10,33 @@
   } from "./components/ScriptDialog.svelte";
   import SidebarMenu from "./components/SidebarMenu.svelte";
   import SearchOverlay from "./components/SearchOverlay.svelte";
-
-  type Status = "idle" | "running" | "ok" | "error";
-  type SavedScript = {
-    name: string;
-    code: string;
-    updatedAt: number;
-  };
-  type ApiResponse = {
-    ok?: boolean;
-    output?: unknown;
-    error?: string;
-    result?: {
-      output?: unknown;
-      content?: Array<{ text?: string }>;
-    };
-  };
+  import type { SavedScript, Status } from "./lib/types";
+  import {
+    HEALTH_POLL_MS,
+    buildPayload,
+    checkServerHealth,
+    getHealthUrl,
+    getResultText,
+    safeJsonParse,
+  } from "./lib/api";
+  import {
+    loadApiKey,
+    loadScripts,
+    persistApiKey,
+    persistScripts,
+  } from "./lib/storage";
+  import {
+    buildExportContent,
+    mergeImportedScripts,
+    parseImportContent,
+    removeScript,
+    upsertScript,
+  } from "./lib/scripts";
 
   const BASE_TEXTS = TEXTS.en;
   const DEFAULT_LANG: LangKey = "en";
   const DEFAULT_CODE = BASE_TEXTS.app.defaults.defaultCode;
   const DEFAULT_SERVER_URL = BASE_TEXTS.app.defaults.serverUrl;
-  const STORAGE_KEYS = {
-    scripts: "fusion-script-console.scripts",
-    legacy: "fusion-script-console.code",
-    apiKey: "fusion-script-console.apiKey",
-  };
-  const HEALTH_POLL_MS = 2000;
-  const HEALTH_TIMEOUT_MS = 1200;
-  const RUN_DEF_RE = /def\s+run\s*\(/;
-  const AUTO_IMPORT_LINES = [
-    "import adsk.core",
-    "import adsk.fusion",
-    "import adsk.cam",
-  ];
-  const AUTO_IMPORT_RES = [
-    /(^|\n)\s*import\s+adsk\.core\b/,
-    /(^|\n)\s*import\s+adsk\.fusion\b/,
-    /(^|\n)\s*import\s+adsk\.cam\b/,
-  ];
 
   let langCtx = $state<{ value: LangKey }>({ value: DEFAULT_LANG });
   const t = $derived(TEXTS[langCtx.value]);
@@ -76,136 +63,54 @@
   let dialogError = $state("");
   let storageReady = $state(false);
   let authReady = $state(false);
+
   const searchResults = $derived.by(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return [];
+
     return scripts.filter((script) => {
       const name = script.name.toLowerCase();
       const body = script.code.toLowerCase();
       return name.includes(query) || body.includes(query);
     });
   });
+
   const menu = $derived(
     scripts.map((script) => ({ id: script.name, label: script.name }))
   );
+
   const dialogTitle = $derived.by(() =>
     dialogAction === "delete"
       ? t.app.dialog.deleteTitle
       : t.app.dialog.saveTitle
   );
+
   const dialogMessage = $derived.by(() =>
     dialogAction === "delete"
       ? t.app.dialog.deleteMessage
       : t.app.dialog.saveMessage
   );
+
   const serverStatusLabel = $derived(
     serverOnline ? t.app.serverStatus.online : t.app.serverStatus.offline
   );
+
   const serverStatusClass = $derived(
     serverOnline
       ? "bg-[var(--color-bg-success)] text-[var(--color-text-success)]"
       : "bg-[var(--color-bg-danger)] text-[var(--color-text-danger)]"
   );
 
-
-  function wrapCode(source: string): string {
-    const lines = source.split("\n");
-    return ["def run(context):", ...lines.map((line) => `    ${line}`)].join(
-      "\n"
-    );
-  }
-
-  function getHealthUrl(url: string): string | null {
-    try {
-      const parsed = new SvelteURL(url);
-      parsed.pathname = "/health";
-      parsed.search = "";
-      parsed.hash = "";
-      return parsed.toString();
-    } catch {
-      return null;
-    }
-  }
-
-  function setServerStatus(isOnline: boolean) {
-    serverOnline = isOnline;
-  }
-
-  async function checkServerHealth(healthUrl: string) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
-      const cacheBuster = healthUrl.includes("?") ? "&" : "?";
-      const response = await fetch(
-        `${healthUrl}${cacheBuster}t=${Date.now()}`,
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: { "X-API-Key": apiKey },
-          signal: controller.signal,
-        }
-      );
-      clearTimeout(timeoutId);
-      if (response.ok) {
-        setServerStatus(true);
-      } else {
-        setServerStatus(false);
-      }
-    } catch {
-      setServerStatus(false);
-    }
-  }
-
-  function safeJsonParse(
-    raw: string
-  ): { ok: true; data: ApiResponse } | { ok: false } {
-    try {
-      return { ok: true, data: JSON.parse(raw) as ApiResponse };
-    } catch {
-      return { ok: false };
-    }
-  }
-
-  function normalizeText(value: unknown): string | null {
-    if (value === null || value === undefined) {
-      return null;
-    }
-    const text = String(value);
-    return text.trim().length ? text : null;
-  }
-
-  function getResultText(data: ApiResponse): string | null {
-    return (
-      normalizeText(data.output) ??
-      normalizeText(data.result?.output) ??
-      normalizeText(data.result?.content?.[0]?.text) ??
-      null
-    );
-  }
-
-  function getPayload(): string {
-    let header = "";
-    if (autoImport) {
-      const missing = AUTO_IMPORT_LINES.filter(
-        (_, index) => !AUTO_IMPORT_RES[index].test(code)
-      );
-      if (missing.length) {
-        header = `${missing.join("\n")}\n\n`;
-      }
-    }
-
-    if (wrapInRun && !RUN_DEF_RE.test(code)) {
-      return `${header}${wrapCode(code)}`;
-    }
-    return `${header}${code}`;
-  }
-
   async function runScript() {
     status = "running";
     lastError = "";
     output = t.app.messages.running;
 
-    const payload = getPayload();
+    const payload = buildPayload({
+      source: code,
+      wrapInRun,
+      autoImport,
+    });
 
     try {
       const response = await fetch(serverUrl, {
@@ -219,6 +124,7 @@
 
       const raw = await response.text();
       const parsed = safeJsonParse(raw);
+
       if (!parsed.ok) {
         status = response.ok ? "ok" : "error";
         output = `${t.app.messages.httpPrefix} ${response.status}: ${
@@ -259,44 +165,77 @@
       dialogOpen = true;
       return;
     }
-    const now = Date.now();
-    const existing = scripts.find((script) => script.name === name);
-    if (existing) {
-      existing.code = code;
-      existing.updatedAt = now;
-      scripts = [...scripts];
-    } else {
-      scripts = [...scripts, { name, code, updatedAt: now }];
-    }
-    currentScriptName = name;
-    active = name;
+
+    const next = upsertScript({
+      scripts,
+      name,
+      code,
+    });
+
+    scripts = next.scripts;
+    currentScriptName = next.activeName;
+    active = next.activeName;
   }
 
-  // Remove current script from storage and editor.
   function deleteScript() {
-    if (currentScriptName) {
-      scripts = scripts.filter((script) => script.name !== currentScriptName);
-      currentScriptName = "";
-      active = "";
-    }
+    const next = removeScript({
+      scripts,
+      currentName: currentScriptName,
+    });
+
+    scripts = next.scripts;
+    currentScriptName = next.currentName;
+    active = next.activeName;
     code = "";
   }
 
   function exportAllScripts() {
     if (!scripts.length) return;
-    const parts = scripts.map(
-      (script) => `"""${script.name}"""\n${script.code}`
-    );
-    const content = parts.join("\n\n---\n\n");
+
+    const content = buildExportContent(scripts);
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = t.app.defaults.exportFileName;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  async function importAllScripts() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".txt,text/plain";
+
+    const file = await new Promise<File | null>((resolve) => {
+      input.onchange = () => resolve(input.files?.[0] ?? null);
+      input.click();
+    });
+
+    if (!file) return;
+
+    try {
+      const raw = await file.text();
+      const imported = parseImportContent(raw);
+      if (!imported.length) {
+        lastError = t.app.messages.importInvalid;
+        output = t.app.messages.importInvalid;
+        status = "error";
+        return;
+      }
+
+      scripts = mergeImportedScripts({ current: scripts, imported });
+      output = `${t.app.messages.importSuccessPrefix}${imported.length}`;
+      lastError = "";
+      status = "ok";
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      output = `${t.app.messages.importFailedPrefix}${lastError}`;
+      status = "error";
+    }
   }
 
   function openDialog(action: DialogAction) {
@@ -312,6 +251,7 @@
     } else if (dialogAction === "delete") {
       deleteScript();
     }
+
     if (!dialogError) {
       dialogOpen = false;
       dialogAction = null;
@@ -340,50 +280,15 @@
     }
   }
 
-  function loadScripts(): SavedScript[] {
-    const saved = localStorage.getItem(STORAGE_KEYS.scripts);
-    if (saved) {
-      try {
-        return JSON.parse(saved) ?? [];
-      } catch {
-        return [];
-      }
-    }
-    const legacy = localStorage.getItem(STORAGE_KEYS.legacy);
-    if (legacy) {
-      localStorage.removeItem(STORAGE_KEYS.legacy);
-      return [
-        {
-          name: t.app.defaults.legacyName,
-          code: legacy,
-          updatedAt: Date.now(),
-        },
-      ];
-    }
-    return [];
-  }
-
-  function persistScripts() {
-    localStorage.setItem(STORAGE_KEYS.scripts, JSON.stringify(scripts));
-  }
-
-  function loadApiKey(): string {
-    return localStorage.getItem(STORAGE_KEYS.apiKey) ?? "";
-  }
-
-  function persistApiKey() {
-    localStorage.setItem(STORAGE_KEYS.apiKey, apiKey);
-  }
-
   $effect(() => {
     if (storageReady) return;
-    scripts = loadScripts();
+    scripts = loadScripts(t.app.defaults.legacyName);
     storageReady = true;
   });
 
   $effect(() => {
     if (!storageReady) return;
-    persistScripts();
+    persistScripts(scripts);
   });
 
   $effect(() => {
@@ -394,21 +299,24 @@
 
   $effect(() => {
     if (!authReady) return;
-    persistApiKey();
+    persistApiKey(apiKey);
   });
 
   $effect(() => {
     const healthUrl = getHealthUrl(serverUrl);
     if (!healthUrl) {
-      setServerStatus(false);
+      serverOnline = false;
       lastError = t.app.messages.invalidServerUrl;
       return;
     }
+
     let cancelled = false;
+
     const run = async () => {
       if (cancelled) return;
-      await checkServerHealth(healthUrl);
+      serverOnline = await checkServerHealth(healthUrl, apiKey);
     };
+
     run();
     const id = setInterval(run, HEALTH_POLL_MS);
     return () => {
@@ -436,27 +344,29 @@
 {/snippet}
 
 <main
-  class="min-h-screen bg-[var(--color-bg-page)] text-[var(--color-text-default)]"
+  class="min-h-screen overflow-x-hidden bg-[var(--color-bg-page)] text-[var(--color-text-default)]"
 >
-  <div class="flex items-center">
+  <div class="fixed left-3 top-3 z-[220] md:left-4 md:top-4">
     <SidebarMenu
       menu={menu}
       activeItem={active}
       onSelect={handleMenuSelect}
     />
   </div>
-  <div class="flex-1"></div>
   <Tooltip text={t.app.buttons.toggleTheme} position="left">
-    <ThemeToggle class="fixed top-4 right-4 z-[200]" />
+    <ThemeToggle class="fixed right-3 top-3 z-[220] md:right-4 md:top-4" />
   </Tooltip>
-  <SearchOverlay
-    bind:value={searchQuery}
-    results={searchResults}
-    onSelect={handleMenuSelect}
-  />
-  <div class="relative z-0 mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10 pt-24">
-    <Card header={editorHeader} class="h-full">
-      <div class="space-y-6">
+  <div
+    class="relative z-0 mx-auto flex w-full max-w-6xl flex-col gap-3 px-2 pb-8 pt-3 sm:px-4 md:gap-5 md:px-6 md:pb-10 md:pt-4"
+  >
+    <SearchOverlay
+      bind:value={searchQuery}
+      results={searchResults}
+      onSelect={handleMenuSelect}
+    />
+    <div class="min-w-0">
+      <Card header={editorHeader} class="h-full min-w-0">
+        <div class="min-w-0 space-y-4 md:space-y-6">
         <EditorPanel
           bind:serverUrl
           bind:apiKey
@@ -465,16 +375,14 @@
           bind:code
           isRunning={isRunning}
           onOpenDialog={openDialog}
+          onImportAll={importAllScripts}
           onExportAll={exportAllScripts}
           onClearOutput={clearOutput}
           onRun={runScript}
         />
         <OutputPanel {output} {lastError} />
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </div>
   </div>
 </main>
-
-
-
-

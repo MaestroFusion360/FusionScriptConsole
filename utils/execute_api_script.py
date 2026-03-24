@@ -6,6 +6,7 @@ import os
 import re
 import traceback
 import adsk.core
+import config
 
 app = adsk.core.Application.get()
 
@@ -31,12 +32,13 @@ def handler(script: str) -> dict:
         }
 
 
-    try:
-        debug_path = os.path.join(os.path.dirname(__file__), "last_script.py")
-        with open(debug_path, "w", encoding="utf-8") as f:
-            f.write(script)
-    except Exception:
-        pass
+    if config.DEBUG:
+        try:
+            debug_path = os.path.join(os.path.dirname(__file__), "last_script.py")
+            with open(debug_path, "w", encoding="utf-8") as f:
+                f.write(script)
+        except Exception:
+            pass
     try:
         output_lines = []
 
@@ -64,10 +66,13 @@ def handler(script: str) -> dict:
                     return None
 
         proxy_app = _AppProxy(app)
+        original_get = adsk.core.Application.get
+        patched_get = False
         try:
             adsk.core.Application.get = staticmethod(lambda: proxy_app)
+            patched_get = True
         except Exception:
-            pass
+            patched_get = False
 
         scope = {
             "adsk": adsk,
@@ -77,11 +82,18 @@ def handler(script: str) -> dict:
             "print": log,
         }
 
-        exec(script, scope, scope)
-        run_func = scope.get("run")
-        result_value = None
-        if callable(run_func):
-            result_value = run_func(None)
+        try:
+            exec(script, scope, scope)
+            run_func = scope.get("run")
+            result_value = None
+            if callable(run_func):
+                result_value = run_func(None)
+        finally:
+            if patched_get:
+                try:
+                    adsk.core.Application.get = original_get
+                except Exception:
+                    pass
 
         output = "\n".join(output_lines).strip()
         if not output and result_value is not None:

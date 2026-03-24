@@ -28,6 +28,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 class ApiServerHandler(BaseHTTPRequestHandler):
     """HTTP handler for API server endpoints."""
+    MAX_REQUEST_BYTES = 1024 * 1024  # 1 MiB
 
     def _is_authorized(self) -> bool:
         api_key = config.get_api_key() or ""
@@ -55,6 +56,12 @@ class ApiServerHandler(BaseHTTPRequestHandler):
 
         try:
             content_length = int(self.headers.get('Content-Length', 0))
+            if content_length <= 0:
+                self.send_error(400, "Missing request body")
+                return
+            if content_length > self.MAX_REQUEST_BYTES:
+                self.send_error(413, "Payload Too Large")
+                return
             post_data = self.rfile.read(content_length)
             request_data = json.loads(post_data.decode('utf-8'))
         except json.JSONDecodeError:

@@ -1,4 +1,6 @@
-﻿export type LangKey = "en" | "ru";
+﻿import APP_META from "./app-meta.json";
+
+export type LangKey = "en" | "ru";
 
 export type LangOption = { label: string; value: LangKey };
 
@@ -48,6 +50,7 @@ export type Texts = {
     buttons: {
       save: string;
       delete: string;
+      importAll: string;
       exportAll: string;
       clearOutput: string;
       run: string;
@@ -67,6 +70,9 @@ export type Texts = {
       httpPrefix: string;
       emptyResponse: string;
       searchNoResults: string;
+      importInvalid: string;
+      importSuccessPrefix: string;
+      importFailedPrefix: string;
     };
     defaults: {
       serverUrl: string;
@@ -82,18 +88,30 @@ export type Texts = {
   };
 };
 
+const APP = APP_META as {
+  title: string;
+  version: string;
+  footer: string;
+  authorUrl: string;
+  brand: string;
+  serverUrlPlaceholder: string;
+  exportFileName: string;
+  defaultCode: string;
+  languageOptions: LangOption[];
+};
+
 export const TEXTS: Record<LangKey, Texts> = {
   ru: {
     app: {
-      title: "Fusion Script Console",
-      version: "v0.1.0",
-      footer: "(c) 2025 MaestroFusion360",
-      authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
-      brand: "Fusion API Server",
+      title: APP.title,
+      version: APP.version,
+      footer: APP.footer,
+      authorUrl: APP.authorUrl,
+      brand: APP.brand,
       subtitle: "Отправляйте Python в Fusion 360 и читайте вывод.",
       fields: {
         serverUrlLabel: "URL сервера",
-        serverUrlPlaceholder: "http://127.0.0.1:9100/api",
+        serverUrlPlaceholder: APP.serverUrlPlaceholder,
         apiKeyLabel: "API ключ",
         apiKeyPlaceholder: "Введите API ключ",
         scriptNameLabel: "Имя скрипта",
@@ -130,6 +148,7 @@ export const TEXTS: Record<LangKey, Texts> = {
       buttons: {
         save: "Сохранить скрипт",
         delete: "Удалить скрипт",
+        importAll: "Импортировать скрипты",
         exportAll: "Экспортировать все скрипты",
         clearOutput: "Очистить вывод",
         run: "Запустить скрипт",
@@ -149,41 +168,34 @@ export const TEXTS: Record<LangKey, Texts> = {
         httpPrefix: "HTTP",
         emptyResponse: "(пустой ответ)",
         searchNoResults: "Совпадений не найдено",
+        importInvalid: "Файл импорта не содержит валидных скриптов",
+        importSuccessPrefix: "Импортировано скриптов: ",
+        importFailedPrefix: "Ошибка импорта: ",
       },
       defaults: {
-        serverUrl: "http://127.0.0.1:9100/api",
+        serverUrl: APP.serverUrlPlaceholder,
         scriptName: "Мой скрипт",
         legacyName: "Без названия",
-        exportFileName: "fusion-scripts.txt",
-        defaultCode: `import adsk.core
-
-
-def run(context):
-    app = adsk.core.Application.get()
-    app.log(app.activeDocument.name)
-    return app.activeDocument.name
-`,
+        exportFileName: APP.exportFileName,
+        defaultCode: APP.defaultCode,
       },
       language: {
         label: "Язык",
-        options: [
-          { label: "Русский", value: "ru" },
-          { label: "English", value: "en" },
-        ],
+        options: APP.languageOptions,
       },
     },
   },
   en: {
     app: {
-      title: "Fusion Script Console",
-      version: "v0.1.0",
-      footer: "(c) 2025 MaestroFusion360",
-      authorUrl: "https://github.com/MaestroFusion360/FusionScriptConsole",
-      brand: "Fusion API Server",
+      title: APP.title,
+      version: APP.version,
+      footer: APP.footer,
+      authorUrl: APP.authorUrl,
+      brand: APP.brand,
       subtitle: "Send Python to Fusion 360 and read the output.",
       fields: {
         serverUrlLabel: "Server URL",
-        serverUrlPlaceholder: "http://127.0.0.1:9100/api",
+        serverUrlPlaceholder: APP.serverUrlPlaceholder,
         apiKeyLabel: "API Key",
         apiKeyPlaceholder: "Enter API key",
         scriptNameLabel: "Script name",
@@ -220,6 +232,7 @@ def run(context):
       buttons: {
         save: "Save script",
         delete: "Delete script",
+        importAll: "Import scripts",
         exportAll: "Export all scripts",
         clearOutput: "Clear output",
         run: "Run script",
@@ -239,29 +252,21 @@ def run(context):
         httpPrefix: "HTTP",
         emptyResponse: "(empty response)",
         searchNoResults: "No matches found",
+        importInvalid: "Import file does not contain valid scripts",
+        importSuccessPrefix: "Imported scripts: ",
+        importFailedPrefix: "Import failed: ",
       },
       defaults: {
-        serverUrl: "http://127.0.0.1:9100/api",
+        serverUrl: APP.serverUrlPlaceholder,
         scriptName: "My script",
         legacyName: "Untitled",
-        exportFileName: "fusion-scripts.txt",
-        defaultCode: `import adsk.core
-
-
-def run(context):
-    app = adsk.core.Application.get()
-    app.log(app.activeDocument.name)
-    return app.activeDocument.name
-`,
+        exportFileName: APP.exportFileName,
+        defaultCode: APP.defaultCode,
       },
       language: {
         label: "Language",
-        options: [
-          { label: "Русский", value: "ru" },
-          { label: "English", value: "en" },
-        ],
+        options: APP.languageOptions,
       },
     },
   },
 };
-

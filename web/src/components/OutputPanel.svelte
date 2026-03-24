@@ -15,7 +15,7 @@
 </script>
 
 <div
-  class="rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm overflow-hidden"
+  class="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-sm"
 >
   <div
     class="flex items-center justify-between border-b border-[var(--border-color-default)] bg-[var(--color-bg-muted)] px-4 py-2 text-[var(--color-text-default)]"
@@ -27,7 +27,7 @@
       {output ? "" : t.hints.noOutput}
     </span>
   </div>
-  <div class="editor-shell h-[320px] overflow-hidden">
+  <div class="editor-shell h-56 overflow-hidden md:h-[320px]">
     <CodeView
       code={output || ""}
       language="txt"
@@ -42,7 +42,7 @@
 
 {#if lastError}
   <div
-    class="rounded-lg border border-[var(--color-bg-danger)] bg-[var(--color-bg-danger)] px-3 py-2 text-xs text-[var(--color-text-danger)]"
+    class="break-words rounded-lg border border-[var(--color-bg-danger)] bg-[var(--color-bg-danger)] px-3 py-2 text-xs text-[var(--color-text-danger)]"
   >
     {lastError}
   </div>

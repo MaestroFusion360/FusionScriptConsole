@@ -11,6 +11,19 @@ except ImportError:
     app = None
 
 
+def _log_error(message: str) -> None:
+    if not app:
+        return
+    try:
+        app.log(
+            message,
+            adsk.core.LogLevels.ErrorLogLevel,
+            adsk.core.LogTypes.ConsoleLogType
+        )
+    except Exception:
+        pass
+
+
 class TaskManager:
     """Singleton for posting tasks via custom events."""
 
@@ -52,7 +65,8 @@ class TaskManager:
             cls._is_running = True
             return True
 
-        except Exception:
+        except Exception as exc:
+            _log_error(f"TaskManager.start() failed: {exc}")
             return False
 
     @classmethod
@@ -71,7 +85,8 @@ class TaskManager:
             cls._is_running = False
             return True
 
-        except Exception:
+        except Exception as exc:
+            _log_error(f"TaskManager.stop() failed: {exc}")
             return False
 
     @classmethod
@@ -100,7 +115,8 @@ class TaskManager:
             app.fireCustomEvent(cls._custom_event.eventId, json.dumps(event_data))
             return task_id
 
-        except Exception:
+        except Exception as exc:
+            _log_error(f"TaskManager.post() failed: {exc}")
             return None
 
     @classmethod
@@ -136,15 +152,15 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
 
             try:
                 callback(data)
-            except Exception:
-                pass
+            except Exception as exc:
+                _log_error(f"TaskEventHandler callback failed: {exc}")
 
             del self._pending_tasks[task_id]
 
-        except json.JSONDecodeError:
-            pass
-        except Exception:
-            pass
+        except json.JSONDecodeError as exc:
+            _log_error(f"TaskEventHandler JSON decode error: {exc}")
+        except Exception as exc:
+            _log_error(f"TaskEventHandler notify failed: {exc}")
 
 
 def start_task_manager() -> bool:

@@ -10,6 +10,7 @@ describe("EditorPanel", () => {
         serverUrl: "http://127.0.0.1:9100/api",
         apiKey: "secret",
         wrapInRun: true,
+        autoImport: false,
         code: "print('ok')",
       },
     });

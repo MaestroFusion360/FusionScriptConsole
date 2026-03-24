@@ -26,17 +26,16 @@
   }
 </script>
 
-<div class="fixed top-4 left-1/2 z-[300] w-[min(520px,calc(100%-3rem))] -translate-x-1/2 pointer-events-auto">
+<div class="relative z-[120] mx-auto mt-4 w-full max-w-[520px] pointer-events-auto md:mt-5">
   <SearchInput
     bind:value
-    label={t.fields.searchLabel}
     placeholder={t.fields.searchPlaceholder}
     class="w-full"
   />
   {#if showResults}
     <div class="relative">
       <div
-        class="absolute left-0 right-0 mt-2 z-[210] max-h-[280px] overflow-auto border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-xl pointer-events-auto"
+        class="absolute left-0 right-0 z-[210] mt-2 max-h-[45vh] overflow-auto border border-[var(--border-color-default)] bg-[var(--color-bg-surface)] shadow-xl pointer-events-auto md:max-h-[280px]"
       >
         {#if results.length === 0}
           <div class="px-4 py-2 text-xs text-[var(--color-text-muted)]">
